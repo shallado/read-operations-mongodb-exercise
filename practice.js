@@ -73,3 +73,148 @@ db.movies.find({
   }
 });
 
+// ------------------ Element Operators ----------------------
+use user;
+
+db.users.insertMany([{
+  name: 'Max',
+  hobbies: [{
+    title: 'Sports',
+    frequency: 3
+  }, {
+    title: 'Cooking',
+    frequency: 6
+  }],
+  phone: 0131782734
+}, {
+  name: 'Manuel',
+  hobbies: [{
+    title: 'Cooking',
+    frequency: 5
+  }, {
+    title: 'Cars',
+    frequency: 2
+  }],
+  phone: '012177972',
+  age: 30
+}]);
+
+// find all users that age exists
+db.users.find({
+  age: {
+    $exists: true
+  }
+});
+
+// find all users with phone values that are numbers
+db.users.find({
+  phone: {
+    $type: 'number'
+  }
+});
+
+// ------------------ $expr ----------------------
+use financialData;
+
+// doesn't take the value from these field but treats it as a hard input so basically a string so here your comparing the string volume to string target in order to actually compare the values in these field you need to put a dollar sign in front of each field name like this $volume, $target
+$gt: ['volume', 'target']
+
+db.sales.insertMany([{
+  volume: 100,
+  target: 120
+}, {
+  volume: 89,
+  target: 80
+}, {
+  volume: 200,
+  target: 177
+}]);
+
+// find all sales that have volume > target
+db.sales.find({
+  $expr: {
+    $gt: ['$volume', '$target']
+  }
+});
+
+// give me documents where volume is greater than target
+// if volume gte 190 then subtract 10 and also try subtracting 30
+// difference between volume and target needs to be at least 10 
+// also try the difference needing to be at least 30 to see the query change
+// result with 10 should give me 2nd and 3rd documents
+// results with 30 should only give me the 2nd document
+db.sales.find({
+  $expr: {
+    $gt: [{
+        $cond: {
+          if: {
+            $gt: ['$volume', 190]
+          },
+          then: {
+            $subtract: ['$volume', 30]
+          },
+          else: '$volume'
+        }
+      },
+      '$target'
+    ]
+  }
+});
+
+// work with original.json file
+db.movieStarts.insertMany([{
+    "title": "The Last Student Returns",
+    "meta": {
+      "rating": 9.5,
+      "aired": 2018,
+      "runtime": 100
+    },
+    "visitors": 1300000,
+    "expectedVisitors": 1550000,
+    "genre": ["thriller", "drama", "action"]
+  },
+  {
+    "title": "Supercharged Teaching",
+    "meta": {
+      "rating": 9.3,
+      "aired": 2016,
+      "runtime": 60
+    },
+    "visitors": 370000,
+    "expectedVisitors": 1000000,
+    "genre": ["thriller", "action"]
+  },
+  {
+    "title": "Teach me if you can",
+    "meta": {
+      "rating": 8.5,
+      "aired": 2014,
+      "runtime": 90
+    },
+    "visitors": 590378,
+    "expectedVisitors": 500000,
+    "genre": ["action", "thriller"]
+  }
+]);
+// 1) Import the attached data into a new database (e.g. boxOffice) and collection (e.g. movieStarts)
+// 2) Search all movies that have a rating higher than 9.2 and a runtime lower than 100 minutes
+db.movieStarts.find({
+  'meta.rating': {
+    $gt: 9.2
+  },
+  'meta.runtime': {
+    $lt: 100
+  }
+});
+// 3) Search all movies that have a genre of 'drama' or 'action'
+db.movieStarts.find({
+  genre: {
+    $in: ['drama', 'action']
+  }
+});
+// 4) Search all movies where visitors exceeded expectedVisitors
+db.movieStarts.find({
+  $expr: {
+    $gt: ['$visitors', '$expectedVisitors']
+  }
+})
