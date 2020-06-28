@@ -196,6 +196,7 @@ db.movieStarts.insertMany([{
     "genre": ["action", "thriller"]
   }
 ]);
+
 // 1) Import the attached data into a new database (e.g. boxOffice) and collection (e.g. movieStarts)
 // 2) Search all movies that have a rating higher than 9.2 and a runtime lower than 100 minutes
 db.movieStarts.find({
@@ -218,3 +219,103 @@ db.movieStarts.find({
     $gt: ['$visitors', '$expectedVisitors']
   }
 })
+
+// ------------------ Query Arrays ----------------------
+use user;
+
+// looks inside of an array for any documents inside that array that contains title with value sports 
+db.users.find({
+  'hobbies.title': 'Sports'
+});
+
+// find users with exactly three hobbies
+db.users.insertOne({
+  name: 'Chris',
+  hobbies: ['Sports', 'Cooking', 'Hiking']
+});
+
+db.users.find({
+  hobbies: {
+    $size: 3
+  }
+});
+
+// find all movies that have a genre that have action and thriller order doesn't matter
+db.movies.find({
+  genres: ['Action', 'Thriller']
+});
+
+// #1 find all documents with a hobby of sports [and] frequency is greater than or equal to two 
+db.users.find({
+  $and: [{
+    'hobbies.title': 'Sports'
+  }, {
+    'hobbies.frequency': {
+      $gte: 2
+    }
+  }]
+});
+
+// find all documents with a hobby of sports and frequency of 2 without using $and operator
+db.users.find({
+  'hobbies.title': 'Sports',
+  'hobbies.frequency': {
+    $gte: 2
+  }
+})
+
+// use of $elemMatch which will perform same method above labeled 1
+// what to look for inside that embedded document
+db.users.find({
+  hobbies: {
+    $elemMatch: {
+      title: 'Sports',
+      frequency: {
+        $gte: 2
+      }
+    }
+  }
+});
+
+// assignment
+// 1) Import the attached data file into a new collection (e.g. exmoviestarts) in the boxOffice database 
+mongoimport ex-movie.json -d test-db -c exmoviestarts --jsonArray --drop
+// 2) Find all movies with exactly two genres 
+db.exmoviestarts.find({ genre: { $size: 2 } });
+// 3) Find all movies which aired in 2018
+db.exmoviestarts.find({ 'meta.aired': 2018 });
+// 4) Find all movies which have ratings array greater than  8 and lower than 10
+db.exmoviestarts.find({ 
+  ratings: 9
+});
+
+// ------------------ Applying Cursors ------------------------
+// work with movies collection
+
+// get the count of movies
+db.movies.find().count();
+
+// gives me the next document in movies collection
+db.movies.find().next();
+
+// give me the next document using variables
+const movies = db.movies.find();
+movies.next();
+
+// fetch all docs in the database and print out each document
+db.movies.find().forEach((movie) => printjson(movie));
+
+// ------------------ Sorting Cursor Results -----------------------------------
+// sort by rating.average that is ascending and runtime to descending
+db.movies.find().sort({ 'rating.average': -1 });
+
+// ------------------ Skipping & Limiting Cursor Results -----------------------
+// in the cursor order doesn't matter
+// sort by rating.average that is ascending and runtime to descending
+// skip first 10
+// limit results to 5
+db.movies.find().sort({ 'rating.average': 1, runtime: -1 }).skip(10).limit(5).pretty();
+
+// ------------------ Using Projection to Shape our Results --------------------
+// find movies but for results I only want the name, genres, runtime, rating, no image
+db.movies.find({}, { name: 1, genres: 1, runtime: 1, rating: 1 });
